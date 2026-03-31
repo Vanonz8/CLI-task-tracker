@@ -24,17 +24,17 @@ Bash
 cd task_tracker
 Add a task:
 
-Bash
+
 python main.py add "Task Name" --priority 5
 View a list of all tasks:
 
-Bash
+
 python main.py list
 Mark a task as completed (for example, with ID 1):
 
-Bash
+
 python main.py done 1
 View statistics:
 
-Bash
+
 python main.py stats
