@@ -1,4 +1,3 @@
-# CLI-task-tracker
 CLI Task Tracker (Python)
 A simple command-line task manager with priorities and JSON saving. This project is designed to practice OOP skills, work with the file system, and create CLI interfaces in Python.
 
@@ -17,3 +16,25 @@ task.py — Task class, data validation logic, and dictionary conversion.
 storage.py — Functions for loading and saving data to a JSON file.
 
 main.py — Entry point, command routing, and command line argument processing.
+
+🛠 How to run
+Go to the project folder:
+
+Bash
+cd task_tracker
+Add a task:
+
+Bash
+python main.py add "Task Name" --priority 5
+View a list of all tasks:
+
+Bash
+python main.py list
+Mark a task as completed (for example, with ID 1):
+
+Bash
+python main.py done 1
+View statistics:
+
+Bash
+python main.py stats
