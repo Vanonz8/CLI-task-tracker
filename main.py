@@ -1,70 +1,37 @@
-import sys
+import argparse
 from storage import load_tasks, save_tasks
 from task import Task
 
 FILENAME = "tasks.json"
 
 def cmd_add(args, tasks):
-    if not args:
-        print("Error: Task title is required.")
-        return
-
-    priority = 3
-    title = args[0]
-
-    if "--priority" in args:
-        try:
-            index = args.index("--priority")
-            priority = int(args[index + 1])
-            if not (1 <= priority <= 5):
-                print("Error: Priority must be between 1 and 5.")
-                return
-        except (ValueError, IndexError):
-            print("Error: Invalid priority value.")
-            return
-
+    # Argparse already checked that 'title' exists
+    title = args.title
+    priority = args.priority if args.priority else 3
+    
     new_id = max((task.task_id for task in tasks), default=0) + 1
     
     try:
         task = Task(task_id=new_id, title=title, priority=priority)
         tasks.append(task)
         save_tasks(tasks, FILENAME)
-        print(f"Added task: {task.title}, ID: {new_id}")
+        print(f"Success: Added task '{title}', ID: {new_id}")
     except Exception as e:
         print(f"Error adding task: {e}")
-    
-    
+
 def cmd_list(args, tasks):
-    tasks = load_tasks(FILENAME)
-    status_filter = None
-    
-    if "--status" in args:
-        try:
-            index = args.index("--status")
-            status_filter = args[index + 1]
-        except IndexError:
-            print("Error: Status value is required.")
-            return
-    
     if not tasks:
         print("No tasks found.")
         return
     
     for t in tasks:
-        if status_filter and t.status != status_filter:
+        # We use args.status directly (it's either 'open', 'done', or None)
+        if args.status and t.status != args.status:
             continue
         print(t)
 
 def cmd_done(args, tasks):
-    if not args:
-        print("Error: Task ID is required.")
-        return
-    try:
-        target_id = int(args[0])
-    except ValueError:
-        print("Error: Invalid Task ID.")
-        return
-    tasks = load_tasks(FILENAME)
+    target_id = args.id # Use .id from argparse
     found = False
     for t in tasks:
         if t.task_id == target_id:
@@ -73,40 +40,66 @@ def cmd_done(args, tasks):
             break
     if found:
         save_tasks(tasks, FILENAME)
-        print(f"Marked task ID {target_id} as done.")
+        print(f"Success: Marked task ID {target_id} as done.")
     else:
         print(f"Error: Task with ID {target_id} not found.")
 
-
 def cmd_stats(args, tasks):
-    tasks = load_tasks(FILENAME)
     total = len(tasks)
     open_tasks = sum(1 for t in tasks if t.status == "open")
     done_tasks = sum(1 for t in tasks if t.status == "done")
     
-    print("Task Statistics:")
+    print("--- Task Statistics ---")
     print(f"Total tasks: {total}")
-    print(f"Open tasks: {open_tasks}")
-    print(f"Done tasks: {done_tasks}")
+    print(f"Open tasks:  {open_tasks}")
+    print(f"Done tasks:  {done_tasks}")
+
+def cmd_delete(args, tasks):
+    target_id = args.id # Use .id from argparse
+    original_count = len(tasks)
     
-commands = {
-    "add": cmd_add,
-    "list": cmd_list,
-    "done": cmd_done,
-    "stats": cmd_stats
-}
+    tasks[:] = [t for t in tasks if t.task_id != target_id]
+    
+    if len(tasks) < original_count:
+        save_tasks(tasks, FILENAME)
+        print(f"Success: Deleted task ID {target_id}")
+    else:
+        print(f"Error: Task with ID {target_id} not found.")
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python main.py <command> [options]")
-        sys.exit(1)
-    
-    command = sys.argv[1]
-    args = sys.argv[2:]
-    
-    if command not in commands:
-        print(f"Unknown command: {command}")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="CLI Task Tracker")
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
-    tasks = load_tasks(FILENAME)
-    commands[command](args, tasks)
+    # Add command
+    add_p = subparsers.add_parser("add")
+    add_p.add_argument("title", type=str)
+    add_p.add_argument("--priority", type=int, choices=range(1, 6))
+
+    # List command
+    list_p = subparsers.add_parser("list")
+    list_p.add_argument("--status", choices=["open", "done"])
+
+    # Done command
+    done_p = subparsers.add_parser("done")
+    done_p.add_argument("id", type=int)
+
+    # Stats command
+    subparsers.add_parser("stats")
+
+    # Delete command
+    del_p = subparsers.add_parser("delete")
+    del_p.add_argument("id", type=int)
+
+    args = parser.parse_args()
+    loaded_tasks = load_tasks(FILENAME)
+
+    if args.command == "add":
+        cmd_add(args, loaded_tasks)
+    elif args.command == "list":
+        cmd_list(args, loaded_tasks)
+    elif args.command == "done":
+        cmd_done(args, loaded_tasks)
+    elif args.command == "stats":
+        cmd_stats(args, loaded_tasks)
+    elif args.command == "delete":
+        cmd_delete(args, loaded_tasks)
