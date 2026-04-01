@@ -20,21 +20,19 @@ main.py — Entry point, command routing, and command line argument processing.
 🛠 How to run
 Go to the project folder:
 
-Bash
 cd task_tracker
+
 Add a task:
-
-
 python main.py add "Task Name" --priority 5
+
 View a list of all tasks:
-
-
 python main.py list
+
 Mark a task as completed (for example, with ID 1):
-
-
 python main.py done 1
+
 View statistics:
-
-
 python main.py stats
+
+delete task:
+python main.py delete 1
